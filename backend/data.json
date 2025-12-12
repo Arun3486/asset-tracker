@@ -1,0 +1,88 @@
+{
+  "employees": [
+    {
+      "id": 1,
+      "name": "E1",
+      "email": "E1@test.com",
+      "status": "Active"
+    },
+    {
+      "id": 2,
+      "name": "John Doe",
+      "email": "john@xyz.com",
+      "status": "Active"
+    }
+  ],
+  "assets": [
+    {
+      "id": 1,
+      "assetId": "A1",
+      "serialNo": "111",
+      "type": "Laptop",
+      "model": "Thinkpad",
+      "os": "Windows",
+      "dateOfPurchase": "2025-12-11",
+      "stockStatus": "In-Stock",
+      "workingStatus": "Working",
+      "location": "Bangalore"
+    },
+    {
+      "id": 2,
+      "assetId": "A2",
+      "serialNo": "2",
+      "type": "Laptop",
+      "model": "macbook",
+      "os": "iOS",
+      "dateOfPurchase": "2025-12-10",
+      "stockStatus": "In-Stock",
+      "workingStatus": "Not-Working",
+      "location": "Bangalore"
+    }
+  ],
+  "transactions": [
+    {
+      "id": 1,
+      "type": "ISSUE",
+      "timestamp": "2025-12-11T16:40:21.794Z",
+      "assetId": "A1",
+      "employeeEmail": "E1@test.com",
+      "reasonType": "New Employee",
+      "comments": "",
+      "fromLocation": "Bangalore",
+      "toLocation": "With Employee"
+    },
+    {
+      "id": 2,
+      "type": "RETURN",
+      "timestamp": "2025-12-11T16:40:57.308Z",
+      "assetId": "A1",
+      "employeeEmail": "E1@test.com",
+      "reasonType": "Return",
+      "comments": "",
+      "fromLocation": "With Employee",
+      "toLocation": "Bangalore"
+    },
+    {
+      "id": 3,
+      "type": "ISSUE",
+      "timestamp": "2025-12-11T17:32:06.507Z",
+      "assetId": "A2",
+      "employeeEmail": "john@xyz.com",
+      "reasonType": "New Employee",
+      "comments": "New laptop",
+      "fromLocation": "Bangalore",
+      "toLocation": "With Employee"
+    },
+    {
+      "id": 4,
+      "type": "RETURN",
+      "timestamp": "2025-12-11T17:33:31.887Z",
+      "assetId": "A2",
+      "employeeEmail": "john@xyz.com",
+      "reasonType": "Not Working",
+      "comments": "",
+      "fromLocation": "With Employee",
+      "toLocation": "Bangalore"
+    }
+  ]
+}

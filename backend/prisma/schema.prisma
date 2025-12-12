@@ -1,0 +1,80 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // local dev
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  status    String   @default("Active") // Active / Inactive
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[] // relation
+}
+
+model Asset {
+  id            Int      @id @default(autoincrement())
+  assetId       String   @unique
+  serialNo      String
+  type          String
+  model         String
+  os            String
+
+  // Use DateTime instead of String
+  dateOfPurchase DateTime
+
+  stockStatus   String   @default("In-Stock")   // In-Stock / Issued
+  workingStatus String   @default("Working")    // Working / Not-Working
+  location      String   @default("Bangalore")  // Bangalore / Hyderabad / With Employee
+
+  // Track who holds the asset currently
+  issuedToEmail String?  // nullable if In-Stock
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[] // relation
+}
+
+model Transaction {
+  id            Int      @id @default(autoincrement())
+
+  // ISSUE / RETURN
+  type          String
+
+  // Automatically set timestamp
+  timestamp     DateTime @default(now())
+
+  // Relations (keep consistent)
+  assetId       String
+  employeeEmail String
+
+  reasonType    String
+  comments      String?  // optional
+
+  fromLocation  String
+  toLocation    String
+
+  asset    Asset    @relation(fields: [assetId], references: [assetId], onDelete: Restrict, onUpdate: Cascade)
+  employee Employee @relation(fields: [employeeEmail], references: [email], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([assetId])
+  @@index([employeeEmail])
+  @@index([timestamp])
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  role         String   @default("admin") // admin / viewer
+  createdAt    DateTime @default(now())
+}

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Asset Tracker – Add Asset</title>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    .app-card {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px 24px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: #444;
+    }
+
+    .input, select {
+      width: 100%;
+      padding: 9px 10px;
+      font-size: 13px;
+      border-radius: 8px;
+      border: 1px solid #d0d4e4;
+      outline: none;
+      box-sizing: border-box;
+      background: #fff;
+    }
+
+    .input:focus, select:focus {
+      border-color: #4a7bff;
+      box-shadow: 0 0 0 2px rgba(74, 123, 255, 0.15);
+    }
+
+    .btn {
+      padding: 10px 18px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #4a7bff;
+      color: #fff;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .actions {
+      margin-top: 16px;
+    }
+
+    .message {
+      font-size: 13px;
+      margin-top: 12px;
+    }
+
+    .message-success {
+      color: #1c7c3a;
+    }
+
+    .message-error {
+      color: #b02a2a;
+    }
+  </style>
+</head>
+
+<body data-page="add-asset">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar-root"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2 class="page-header-title">Add New Asset</h2>
+        <p class="page-header-subtitle">
+          Register a new laptop/desktop with basic inventory metadata.
+        </p>
+      </header>
+
+      <div class="app-card">
+        <form id="assetForm">
+          <div class="form-grid">
+            <div>
+              <label for="assetIdInput">Asset ID</label>
+              <input id="assetIdInput" class="input" placeholder="e.g. NL-LAP-001" required />
+            </div>
+
+            <div>
+              <label for="serialNoInput">Serial Number</label>
+              <input id="serialNoInput" class="input" placeholder="Serial Number" required />
+            </div>
+
+            <div>
+              <label for="typeInput">Type</label>
+              <select id="typeInput">
+                <option value="Laptop">Laptop</option>
+                <option value="Desktop">Desktop</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="modelInput">Model</label>
+              <input id="modelInput" class="input" placeholder="ThinkPad, MacBook Air, etc." required />
+            </div>
+
+            <div>
+              <label for="osInput">Operating System</label>
+              <select id="osInput">
+                <option value="Windows">Windows</option>
+                <option value="Ubuntu">Ubuntu</option>
+                <option value="iOS">iOS</option>
+                <option value="macOS">macOS</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="purchaseDateInput">Date of Purchase</label>
+              <input id="purchaseDateInput" type="date" class="input" required />
+            </div>
+
+            <div>
+              <label for="stockStatusInput">Stock Status</label>
+              <select id="stockStatusInput">
+                <option value="In-Stock">In-Stock</option>
+                <option value="Issued">Issued</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="workingStatusInput">Working Status</label>
+              <select id="workingStatusInput">
+                <option value="Working">Working</option>
+                <option value="Not-Working">Not-Working</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="locationInput">Location</label>
+              <select id="locationInput">
+                <option value="Bangalore">Bangalore</option>
+                <option value="Hyderabad">Hyderabad</option>
+                <option value="With Employee">With Employee</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn" id="submitBtn">Add Asset</button>
+          </div>
+
+          <div id="message" class="message"></div>
+        </form>
+      </div>
+
+      <div class="footer">
+        Asset Tracker · Add Asset
+      </div>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="sidebar.js"></script>
+
+  <script>
+    const API_BASE_URL = window.location.origin;
+
+    const form = document.getElementById("assetForm");
+    const assetIdInput = document.getElementById("assetIdInput");
+    const serialNoInput = document.getElementById("serialNoInput");
+    const typeInput = document.getElementById("typeInput");
+    const modelInput = document.getElementById("modelInput");
+    const osInput = document.getElementById("osInput");
+    const purchaseDateInput = document.getElementById("purchaseDateInput");
+    const stockStatusInput = document.getElementById("stockStatusInput");
+    const workingStatusInput = document.getElementById("workingStatusInput");
+    const locationInput = document.getElementById("locationInput");
+    const submitBtn = document.getElementById("submitBtn");
+    const messageEl = document.getElementById("message");
+
+    function setMessage(text, type = "success") {
+      if (!text) {
+        messageEl.textContent = "";
+        return;
+      }
+      messageEl.textContent = text;
+      messageEl.className =
+        "message " + (type === "error" ? "message-error" : "message-success");
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const assetId = assetIdInput.value.trim();
+      const serialNo = serialNoInput.value.trim();
+      const type = typeInput.value;
+      const model = modelInput.value.trim();
+      const os = osInput.value;
+      const dateOfPurchase = purchaseDateInput.value;
+      const stockStatus = stockStatusInput.value;
+      const workingStatus = workingStatusInput.value;
+      const location = locationInput.value;
+
+      if (!assetId || !serialNo || !model || !dateOfPurchase) {
+        setMessage("Asset ID, Serial Number, Model, and Date of Purchase are required.", "error");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      setMessage("Creating asset...");
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/assets`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            assetId,
+            serialNo,
+            type,
+            model,
+            os,
+            dateOfPurchase,
+            stockStatus,
+            workingStatus,
+            location,
+          }),
+        });
+
+        if (res.status === 409) {
+          setMessage("An asset with this ID already exists.", "error");
+          submitBtn.disabled = false;
+          return;
+        }
+
+        if (!res.ok) {
+          setMessage("Something went wrong while creating the asset.", "error");
+          submitBtn.disabled = false;
+          return;
+        }
+
+        const created = await res.json();
+        setMessage(`Asset created: ${created.assetId} (${created.model})`, "success");
+
+        form.reset();
+        stockStatusInput.value = "In-Stock";
+        workingStatusInput.value = "Working";
+        locationInput.value = "Bangalore";
+        submitBtn.disabled = false;
+      } catch (err) {
+        console.error(err);
+        setMessage("Unable to connect to the server. Is it running?", "error");
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

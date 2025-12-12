@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Asset Tracker – Employees List</title>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    .app-card {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px 24px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    label {
+      font-size: 13px;
+      margin-right: 4px;
+    }
+
+    select {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #d0d4e4;
+      font-size: 13px;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      font-size: 13px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #4a7bff;
+      color: #fff;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e0e4f0;
+      text-align: left;
+    }
+
+    th {
+      background: #f5f7ff;
+      font-weight: 600;
+      color: #444;
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-active {
+      background: #e6f6ed;
+      color: #1c7c3a;
+    }
+
+    .status-inactive {
+      background: #fdecea;
+      color: #b02a2a;
+    }
+
+    .message {
+      font-size: 13px;
+      margin-top: 10px;
+      color: #b02a2a;
+    }
+  </style>
+</head>
+
+<body data-page="employees-list">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar-root"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2 class="page-header-title">Employees List</h2>
+        <p class="page-header-subtitle">
+          View all employees and filter by status.
+        </p>
+      </header>
+
+      <div class="app-card">
+        <div class="toolbar">
+          <div>
+            <label for="statusFilter">Status:</label>
+            <select id="statusFilter">
+              <option value="">All</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+          <button id="refreshBtn" class="btn">Refresh</button>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="employeesTableBody">
+            <!-- rows inserted via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footer">
+        Asset Tracker · Employees List
+      </div>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="sidebar.js"></script>
+
+  <script>
+    const API_BASE_URL = window.location.origin;
+
+    const statusFilterEl = document.getElementById("statusFilter");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const messageEl = document.getElementById("message");
+    const tableBody = document.getElementById("employeesTableBody");
+
+    function setMessage(msg) {
+      messageEl.textContent = msg || "";
+    }
+
+    function renderEmployees(list) {
+      tableBody.innerHTML = "";
+
+      if (!list || list.length === 0) {
+        setMessage("No employees found for this filter.");
+        return;
+      }
+
+      setMessage("");
+
+      list.forEach((emp, index) => {
+        const tr = document.createElement("tr");
+
+        const idxTd = document.createElement("td");
+        idxTd.textContent = index + 1;
+
+        const nameTd = document.createElement("td");
+        nameTd.textContent = emp.name;
+
+        const emailTd = document.createElement("td");
+        emailTd.textContent = emp.email;
+
+        const statusTd = document.createElement("td");
+        const pill = document.createElement("span");
+        pill.className = "status-pill " + (
+          emp.status === "Active" ? "status-active" : "status-inactive"
+        );
+        pill.textContent = emp.status;
+        statusTd.appendChild(pill);
+
+        tr.appendChild(idxTd);
+        tr.appendChild(nameTd);
+        tr.appendChild(emailTd);
+        tr.appendChild(statusTd);
+
+        tableBody.appendChild(tr);
+      });
+    }
+
+    async function loadEmployees() {
+      const status = statusFilterEl.value.trim();
+      setMessage("Loading employees...");
+
+      let url = `${API_BASE_URL}/api/employees/all`;
+      if (status) {
+        url += `?status=${encodeURIComponent(status)}`;
+      }
+
+      try {
+        const res = await fetch(url, {
+          method: "GET",
+          credentials: "include"
+        });
+
+        if (!res.ok) {
+          setMessage("Failed to load employees.");
+          return;
+        }
+
+        const data = await res.json();
+        renderEmployees(data);
+      } catch (err) {
+        console.error(err);
+        setMessage("Unable to connect to the server. Is it running?");
+      }
+    }
+
+    refreshBtn.addEventListener("click", loadEmployees);
+    statusFilterEl.addEventListener("change", loadEmployees);
+
+    // Initial load
+    loadEmployees();
+  </script>
+</body>
+</html>

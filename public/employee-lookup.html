@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Asset Tracker – Employee Lookup</title>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    .app-card {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 20px 24px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .form-row {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: #444;
+    }
+
+    .input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #d0d4e4;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    .input:focus {
+      border-color: #4a7bff;
+      box-shadow: 0 0 0 2px rgba(74, 123, 255, 0.15);
+    }
+
+    .btn {
+      padding: 10px 18px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #4a7bff;
+      color: #fff;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .result-card {
+      margin-top: 20px;
+      border-radius: 12px;
+      border: 1px solid #e0e4f0;
+      padding: 16px;
+      background: #fafbff;
+      font-size: 14px;
+    }
+
+    .result-row {
+      margin-bottom: 6px;
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-active {
+      background: #e6f6ed;
+      color: #1c7c3a;
+    }
+
+    .status-inactive {
+      background: #fdecea;
+      color: #b02a2a;
+    }
+
+    .message {
+      font-size: 13px;
+      margin-top: 10px;
+      color: #b02a2a;
+    }
+  </style>
+</head>
+
+<body data-page="employee-lookup">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar-root"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2 class="page-header-title">Employee Lookup</h2>
+        <p class="page-header-subtitle">
+          Find an employee by email and view their details.
+        </p>
+      </header>
+
+      <div class="app-card">
+        <form id="lookupForm">
+          <div class="form-row">
+            <label for="emailInput">Employee Email</label>
+            <input
+              type="email"
+              id="emailInput"
+              class="input"
+              placeholder="e.g. john.doe@company.com"
+              required
+            />
+          </div>
+          <button type="submit" class="btn">Search</button>
+        </form>
+
+        <div id="message" class="message"></div>
+
+        <div id="result" class="result-card" style="display:none;">
+          <div class="result-row"><strong>Name:</strong> <span id="empName"></span></div>
+          <div class="result-row"><strong>Email:</strong> <span id="empEmail"></span></div>
+          <div class="result-row">
+            <strong>Status:</strong>
+            <span id="empStatusPill" class="status-pill"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        Asset Tracker · Employee Lookup
+      </div>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="sidebar.js"></script>
+
+  <script>
+    const API_BASE_URL = window.location.origin;
+
+    const form = document.getElementById("lookupForm");
+    const emailInput = document.getElementById("emailInput");
+    const messageEl = document.getElementById("message");
+    const resultCard = document.getElementById("result");
+    const empNameEl = document.getElementById("empName");
+    const empEmailEl = document.getElementById("empEmail");
+    const empStatusPill = document.getElementById("empStatusPill");
+
+    function setError(msg) {
+      messageEl.textContent = msg || "";
+    }
+
+    function showResult(emp) {
+      empNameEl.textContent = emp.name;
+      empEmailEl.textContent = emp.email;
+
+      empStatusPill.textContent = emp.status;
+      empStatusPill.className = "status-pill " + (
+        emp.status === "Active" ? "status-active" : "status-inactive"
+      );
+
+      resultCard.style.display = "block";
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setError("");
+      resultCard.style.display = "none";
+
+      const email = emailInput.value.trim();
+      if (!email) {
+        setError("Email is required.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/employees?email=${encodeURIComponent(email)}`, {
+          method: "GET",
+          credentials: "include"
+        });
+
+        if (res.status === 404) {
+          setError("Employee not found.");
+          return;
+        }
+
+        if (!res.ok) {
+          setError("Something went wrong while fetching employee.");
+          return;
+        }
+
+        const emp = await res.json();
+        showResult(emp);
+      } catch (err) {
+        console.error(err);
+        setError("Unable to connect to the server. Is it running?");
+      }
+    });
+  </script>
+</body>
+</html>

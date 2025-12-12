@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Asset Tracker – Asset Lookup</title>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    .app-card {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 20px 24px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .form-row {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: #444;
+    }
+
+    .input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #d0d4e4;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    .input:focus {
+      border-color: #4a7bff;
+      box-shadow: 0 0 0 2px rgba(74, 123, 255, 0.15);
+    }
+
+    .btn {
+      padding: 10px 18px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #4a7bff;
+      color: #fff;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .result-card {
+      margin-top: 20px;
+      border-radius: 12px;
+      border: 1px solid #e0e4f0;
+      padding: 16px;
+      background: #fafbff;
+      font-size: 14px;
+    }
+
+    .result-row {
+      margin-bottom: 6px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .pill-stock-in {
+      background: #e6f6ed;
+      color: #1c7c3a;
+    }
+
+    .pill-stock-issued {
+      background: #fff4e5;
+      color: #9c6f19;
+    }
+
+    .pill-working {
+      background: #e6f6ed;
+      color: #1c7c3a;
+    }
+
+    .pill-not-working {
+      background: #fdecea;
+      color: #b02a2a;
+    }
+
+    .message {
+      font-size: 13px;
+      margin-top: 10px;
+      color: #b02a2a;
+    }
+
+    .holder-block {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed #d0d4e4;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body data-page="asset-lookup">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar-root"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2 class="page-header-title">Asset Lookup</h2>
+        <p class="page-header-subtitle">
+          Search using Asset ID and view details and current holder.
+        </p>
+      </header>
+
+      <div class="app-card">
+        <form id="lookupForm">
+          <div class="form-row">
+            <label for="assetIdInput">Asset ID</label>
+            <input
+              type="text"
+              id="assetIdInput"
+              class="input"
+              placeholder="e.g. NL-LAP-001"
+              required
+            />
+          </div>
+          <button type="submit" class="btn">Search</button>
+        </form>
+
+        <div id="message" class="message"></div>
+
+        <div id="result" class="result-card" style="display:none;">
+          <div class="result-row"><strong>Asset ID:</strong> <span id="assetId"></span></div>
+          <div class="result-row"><strong>Serial No:</strong> <span id="serialNo"></span></div>
+          <div class="result-row"><strong>Type:</strong> <span id="type"></span></div>
+          <div class="result-row"><strong>Model:</strong> <span id="model"></span></div>
+          <div class="result-row"><strong>OS:</strong> <span id="os"></span></div>
+          <div class="result-row"><strong>Purchase Date:</strong> <span id="purchaseDate"></span></div>
+          <div class="result-row">
+            <strong>Stock Status:</strong>
+            <span id="stockStatusPill" class="pill"></span>
+          </div>
+          <div class="result-row">
+            <strong>Working Status:</strong>
+            <span id="workingStatusPill" class="pill"></span>
+          </div>
+          <div class="result-row"><strong>Location:</strong> <span id="location"></span></div>
+
+          <div class="holder-block" id="holderBlock" style="display:none;">
+            <strong>Current Holder:</strong>
+            <div><span id="holderName"></span> (<span id="holderEmail"></span>) – <span id="holderStatus"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        Asset Tracker · Asset Lookup
+      </div>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="sidebar.js"></script>
+
+  <script>
+    const API_BASE_URL = window.location.origin;
+
+    const form = document.getElementById("lookupForm");
+    const assetIdInput = document.getElementById("assetIdInput");
+    const messageEl = document.getElementById("message");
+    const resultCard = document.getElementById("result");
+
+    const assetIdEl = document.getElementById("assetId");
+    const serialNoEl = document.getElementById("serialNo");
+    const typeEl = document.getElementById("type");
+    const modelEl = document.getElementById("model");
+    const osEl = document.getElementById("os");
+    const purchaseDateEl = document.getElementById("purchaseDate");
+    const stockStatusPill = document.getElementById("stockStatusPill");
+    const workingStatusPill = document.getElementById("workingStatusPill");
+    const locationEl = document.getElementById("location");
+
+    const holderBlock = document.getElementById("holderBlock");
+    const holderNameEl = document.getElementById("holderName");
+    const holderEmailEl = document.getElementById("holderEmail");
+    const holderStatusEl = document.getElementById("holderStatus");
+
+    function setMessage(msg) {
+      messageEl.textContent = msg || "";
+    }
+
+    function renderAsset(asset) {
+      assetIdEl.textContent = asset.assetId;
+      serialNoEl.textContent = asset.serialNo;
+      typeEl.textContent = asset.type;
+      modelEl.textContent = asset.model;
+      osEl.textContent = asset.os;
+      purchaseDateEl.textContent = asset.dateOfPurchase;
+      locationEl.textContent = asset.location;
+
+      stockStatusPill.textContent = asset.stockStatus;
+      stockStatusPill.className =
+        "pill " +
+        (asset.stockStatus === "In-Stock" ? "pill-stock-in" : "pill-stock-issued");
+
+      workingStatusPill.textContent = asset.workingStatus;
+      workingStatusPill.className =
+        "pill " +
+        (asset.workingStatus === "Working"
+          ? "pill-working"
+          : "pill-not-working");
+
+      if (asset.currentHolder) {
+        holderNameEl.textContent = asset.currentHolder.name;
+        holderEmailEl.textContent = asset.currentHolder.email;
+        holderStatusEl.textContent = asset.currentHolder.status;
+        holderBlock.style.display = "block";
+      } else {
+        holderBlock.style.display = "none";
+      }
+
+      resultCard.style.display = "block";
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setMessage("");
+      resultCard.style.display = "none";
+
+      const assetId = assetIdInput.value.trim();
+      if (!assetId) {
+        setMessage("Asset ID is required.");
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/assets?assetId=${encodeURIComponent(assetId)}`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        if (res.status === 404) {
+          setMessage("Asset not found.");
+          return;
+        }
+
+        if (!res.ok) {
+          setMessage("Something went wrong while fetching asset.");
+          return;
+        }
+
+        const asset = await res.json();
+        renderAsset(asset);
+      } catch (err) {
+        console.error(err);
+        setMessage("Unable to connect to the server. Is it running?");
+      }
+    });
+  </script>
+</body>
+</html>

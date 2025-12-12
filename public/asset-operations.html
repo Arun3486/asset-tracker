@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Asset Tracker – Issue & Return</title>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    .grid-two {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .app-card {
+      padding: 20px 24px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .card-title {
+      font-size: 16px;
+      margin-top: 0;
+      margin-bottom: 6px;
+    }
+
+    .card-subtitle {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+
+    .form-row {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: #444;
+    }
+
+    .input, select, textarea {
+      width: 100%;
+      padding: 9px 10px;
+      font-size: 13px;
+      border-radius: 8px;
+      border: 1px solid #d0d4e4;
+      outline: none;
+      box-sizing: border-box;
+      background: #fff;
+    }
+
+    .input:focus, select:focus, textarea:focus {
+      border-color: #4a7bff;
+      box-shadow: 0 0 0 2px rgba(74, 123, 255, 0.15);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .btn {
+      padding: 9px 16px;
+      font-size: 13px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #4a7bff;
+      color: #fff;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .btn-secondary {
+      background: #e4e7f5;
+      color: #222;
+    }
+
+    .message {
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .message-success {
+      color: #1c7c3a;
+    }
+
+    .message-error {
+      color: #b02a2a;
+    }
+
+    .history-card {
+      margin-top: 20px;
+      padding: 16px 18px;
+      border-radius: 12px;
+      background: #fafbff;
+      border: 1px solid #e0e4f0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    th, td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #e0e4f0;
+      text-align: left;
+    }
+
+    th {
+      background: #f5f7ff;
+      font-weight: 600;
+      color: #444;
+    }
+
+    .pill-type-issue {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: #e6f6ed;
+      color: #1c7c3a;
+    }
+
+    .pill-type-return {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: #fdecea;
+      color: #b02a2a;
+    }
+  </style>
+</head>
+
+<body data-page="asset-operations">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar-root"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2 class="page-header-title">Issue & Return</h2>
+        <p class="page-header-subtitle">
+          Issue an asset to an employee or record a return. All actions are logged in transaction history.
+        </p>
+      </header>
+
+      <div class="grid-two">
+        <!-- Issue Asset -->
+        <div class="app-card">
+          <h3 class="card-title">Issue Asset</h3>
+          <p class="card-subtitle">
+            Employee must be <strong>Active</strong>. Asset must be <strong>In-Stock &amp; Working</strong>.
+          </p>
+
+          <form id="issueForm">
+            <div class="form-row">
+              <label for="issueEmployeeEmail">Employee Email</label>
+              <input
+                id="issueEmployeeEmail"
+                class="input"
+                type="email"
+                placeholder="e.g. john.doe@company.com"
+                required
+              />
+            </div>
+
+            <div class="form-row">
+              <label for="issueAssetId">Asset ID</label>
+              <input
+                id="issueAssetId"
+                class="input"
+                type="text"
+                placeholder="e.g. NL-LAP-001"
+                required
+              />
+            </div>
+
+            <div class="form-row">
+              <label for="issueReason">Reason for Issue</label>
+              <select id="issueReason">
+                <option value="New Employee">New Employee</option>
+                <option value="Additional Laptop">Additional Laptop</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="issueComments">Comments</label>
+              <textarea id="issueComments" placeholder="Optional notes..."></textarea>
+            </div>
+
+            <button type="submit" class="btn" id="issueSubmitBtn">Issue Asset</button>
+          </form>
+
+          <div id="issueMessage" class="message"></div>
+        </div>
+
+        <!-- Return Asset -->
+        <div class="app-card">
+          <h3 class="card-title">Return Asset</h3>
+          <p class="card-subtitle">
+            Record a return. If reason is <strong>Not Working</strong>, the asset working status will be updated.
+          </p>
+
+          <form id="returnForm">
+            <div class="form-row">
+              <label for="returnEmployeeEmail">Employee Email</label>
+              <input
+                id="returnEmployeeEmail"
+                class="input"
+                type="email"
+                placeholder="Employee currently holding the asset"
+                required
+              />
+            </div>
+
+            <div class="form-row">
+              <label for="returnAssetId">Asset ID</label>
+              <input
+                id="returnAssetId"
+                class="input"
+                type="text"
+                placeholder="e.g. NL-LAP-001"
+                required
+              />
+            </div>
+
+            <div class="form-row">
+              <label for="returnReason">Reason for Return</label>
+              <select id="returnReason">
+                <option value="Not Working">Not Working</option>
+                <option value="Employee Exit">Employee Exit</option>
+                <option value="Return">Return</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="returnLocation">Return Location</label>
+              <select id="returnLocation">
+                <option value="Bangalore">Bangalore</option>
+                <option value="Hyderabad">Hyderabad</option>
+                <option value="With Employee">With Employee</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="returnComments">Comments</label>
+              <textarea id="returnComments" placeholder="Optional notes..."></textarea>
+            </div>
+
+            <button type="submit" class="btn" id="returnSubmitBtn">Record Return</button>
+          </form>
+
+          <div id="returnMessage" class="message"></div>
+        </div>
+      </div>
+
+      <!-- History by Asset -->
+      <div class="history-card">
+        <h3 class="card-title">Transaction History (By Asset)</h3>
+        <p class="card-subtitle">
+          Enter an Asset ID to view its full issue/return history.
+        </p>
+
+        <form id="historyForm">
+          <div class="form-row" style="max-width:300px;">
+            <label for="historyAssetId">Asset ID</label>
+            <input
+              id="historyAssetId"
+              class="input"
+              type="text"
+              placeholder="e.g. NL-LAP-001"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-secondary" id="historyBtn">Load History</button>
+        </form>
+
+        <div id="historyMessage" class="message"></div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Date/Time</th>
+              <th>Type</th>
+              <th>Employee</th>
+              <th>Reason</th>
+              <th>From</th>
+              <th>To</th>
+              <th>Comments</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <!-- rows via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footer">
+        Asset Tracker · Issue & Return
+      </div>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="sidebar.js"></script>
+
+  <script>
+    const API_BASE_URL = window.location.origin;
+
+    // Issue form elements
+    const issueForm = document.getElementById("issueForm");
+    const issueEmployeeEmail = document.getElementById("issueEmployeeEmail");
+    const issueAssetId = document.getElementById("issueAssetId");
+    const issueReason = document.getElementById("issueReason");
+    const issueComments = document.getElementById("issueComments");
+    const issueSubmitBtn = document.getElementById("issueSubmitBtn");
+    const issueMessage = document.getElementById("issueMessage");
+
+    // Return form elements
+    const returnForm = document.getElementById("returnForm");
+    const returnEmployeeEmail = document.getElementById("returnEmployeeEmail");
+    const returnAssetId = document.getElementById("returnAssetId");
+    const returnReason = document.getElementById("returnReason");
+    const returnLocation = document.getElementById("returnLocation");
+    const returnComments = document.getElementById("returnComments");
+    const returnSubmitBtn = document.getElementById("returnSubmitBtn");
+    const returnMessage = document.getElementById("returnMessage");
+
+    // History elements
+    const historyForm = document.getElementById("historyForm");
+    const historyAssetId = document.getElementById("historyAssetId");
+    const historyMessage = document.getElementById("historyMessage");
+    const historyTableBody = document.getElementById("historyTableBody");
+
+    function setMessage(el, text, type = "success") {
+      if (!text) {
+        el.textContent = "";
+        el.className = "message";
+        return;
+      }
+      el.textContent = text;
+      el.className = "message " + (type === "error" ? "message-error" : "message-success");
+    }
+
+    // --- Issue Asset ---
+    issueForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setMessage(issueMessage, "Issuing asset...");
+
+      const employeeEmail = issueEmployeeEmail.value.trim();
+      const assetId = issueAssetId.value.trim();
+      const reasonType = issueReason.value;
+      const comments = issueComments.value.trim();
+
+      if (!employeeEmail || !assetId) {
+        setMessage(issueMessage, "Employee Email and Asset ID are required.", "error");
+        return;
+      }
+
+      issueSubmitBtn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/assets/issue`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            employeeEmail,
+            assetId,
+            reasonType,
+            comments,
+          }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const msg = data.message || "Failed to issue asset.";
+          setMessage(issueMessage, msg, "error");
+          issueSubmitBtn.disabled = false;
+          return;
+        }
+
+        const data = await res.json();
+        setMessage(
+          issueMessage,
+          `Asset ${data.asset.assetId} issued to ${data.asset.currentHolder?.email || employeeEmail}.`,
+          "success"
+        );
+
+        // Clear comments only; keep identifiers
+        issueComments.value = "";
+        issueSubmitBtn.disabled = false;
+      } catch (err) {
+        console.error(err);
+        setMessage(issueMessage, "Unable to connect to the server. Is it running?", "error");
+        issueSubmitBtn.disabled = false;
+      }
+    });
+
+    // --- Return Asset ---
+    returnForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setMessage(returnMessage, "Recording return...");
+
+      const employeeEmail = returnEmployeeEmail.value.trim();
+      const assetId = returnAssetId.value.trim();
+      const reasonType = returnReason.value;
+      const comments = returnComments.value.trim();
+      const returnLoc = returnLocation.value;
+
+      if (!employeeEmail || !assetId) {
+        setMessage(returnMessage, "Employee Email and Asset ID are required.", "error");
+        return;
+      }
+
+      returnSubmitBtn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/assets/return`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            employeeEmail,
+            assetId,
+            reasonType,
+            comments,
+            returnLocation: returnLoc,
+          }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const msg = data.message || "Failed to record return.";
+          setMessage(returnMessage, msg, "error");
+          returnSubmitBtn.disabled = false;
+          return;
+        }
+
+        const data = await res.json();
+        setMessage(
+          returnMessage,
+          `Asset ${data.asset.assetId} returned to ${data.asset.location}.`,
+          "success"
+        );
+
+        // Keep identifiers, clear comments
+        returnComments.value = "";
+        returnSubmitBtn.disabled = false;
+      } catch (err) {
+        console.error(err);
+        setMessage(returnMessage, "Unable to connect to the server. Is it running?", "error");
+        returnSubmitBtn.disabled = false;
+      }
+    });
+
+    // --- History by Asset ---
+    function renderHistory(list) {
+      historyTableBody.innerHTML = "";
+
+      if (!list || list.length === 0) {
+        setMessage(historyMessage, "No transactions found for this asset.");
+        return;
+      }
+
+      setMessage(historyMessage, "");
+
+      list.forEach((tx) => {
+        const tr = document.createElement("tr");
+
+        const timestamp = new Date(tx.timestamp).toLocaleString();
+
+        const tsTd = document.createElement("td");
+        tsTd.textContent = timestamp;
+
+        const typeTd = document.createElement("td");
+        const pill = document.createElement("span");
+        pill.textContent = tx.type;
+        pill.className =
+          tx.type === "ISSUE" ? "pill-type-issue" : "pill-type-return";
+        typeTd.appendChild(pill);
+
+        const empTd = document.createElement("td");
+        empTd.textContent = tx.employeeEmail;
+
+        const reasonTd = document.createElement("td");
+        reasonTd.textContent = tx.reasonType;
+
+        const fromTd = document.createElement("td");
+        fromTd.textContent = tx.fromLocation;
+
+        const toTd = document.createElement("td");
+        toTd.textContent = tx.toLocation;
+
+        const commentsTd = document.createElement("td");
+        commentsTd.textContent = tx.comments || "";
+
+        tr.appendChild(tsTd);
+        tr.appendChild(typeTd);
+        tr.appendChild(empTd);
+        tr.appendChild(reasonTd);
+        tr.appendChild(fromTd);
+        tr.appendChild(toTd);
+        tr.appendChild(commentsTd);
+
+        historyTableBody.appendChild(tr);
+      });
+    }
+
+    historyForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setMessage(historyMessage, "Loading history...");
+
+      const assetId = historyAssetId.value.trim();
+      if (!assetId) {
+        setMessage(historyMessage, "Asset ID is required.", "error");
+        return;
+      }
+
+      historyTableBody.innerHTML = "";
+
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/transactions?assetId=${encodeURIComponent(assetId)}`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        if (!res.ok) {
+          setMessage(historyMessage, "Failed to load history.", "error");
+          return;
+        }
+
+        const list = await res.json();
+        renderHistory(list);
+      } catch (err) {
+        console.error(err);
+        setMessage(historyMessage, "Unable to connect to the server. Is it running?", "error");
+      }
+    });
+  </script>
+</body>
+</html>

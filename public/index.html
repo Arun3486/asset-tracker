@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Asset Tracker – Home</title>
+
+  <!-- Shared styles -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<!-- data-page tells sidebar.js which menu item to highlight -->
+<body data-page="home">
+  <div class="layout">
+
+    <!-- Sidebar will be injected by sidebar.js -->
+    <aside class="sidebar" id="sidebar-root"></aside>
+
+    <!-- Main content -->
+    <main class="main">
+      <header>
+        <h2 class="page-header-title">Asset Tracker</h2>
+        <p class="page-header-subtitle">
+          Internal IT Asset Management System
+        </p>
+      </header>
+
+      <section class="dashboard">
+
+        <div class="dashboard-card">
+          <h3>Employees</h3>
+          <p>Manage employee records and asset assignments.</p>
+          <a href="employees-list.html" class="btn btn-primary">
+            View Employees
+          </a>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>Assets</h3>
+          <p>Track laptops, desktops, and their current status.</p>
+          <a href="assets-list.html" class="btn btn-primary">
+            View Assets
+          </a>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>Issue / Return</h3>
+          <p>Assign assets to employees or process returns.</p>
+          <a href="asset-operations.html" class="btn btn-primary">
+            Issue / Return Asset
+          </a>
+        </div>
+
+      </section>
+
+      <div class="footer">
+        Asset Tracker · Home
+      </div>
+    </main>
+  </div>
+
+  <!-- 🔐 Authentication guard -->
+  <script src="auth.js"></script>
+
+  <!-- Sidebar rendering + navigation logic -->
+  <script src="sidebar.js"></script>
+</body>
+</html>

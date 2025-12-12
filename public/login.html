@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Asset Tracker – Login</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <!-- We can skip sidebar here, just a simple login card -->
+    <main class="content">
+      <div class="page-header">
+        <h1>Login</h1>
+        <p class="page-subtitle">Sign in to continue to Asset Tracker</p>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <form id="loginForm">
+            <div class="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                id="loginEmail"
+                class="form-control"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                id="loginPassword"
+                class="form-control"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+              Login
+            </button>
+
+            <div id="loginMessage" class="mt-2 text-danger" style="display:none;"></div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API_BASE_URL = window.location.origin;
+
+    const form = document.getElementById("loginForm");
+    const msgEl = document.getElementById("loginMessage");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msgEl.style.display = "none";
+      msgEl.textContent = "";
+
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      try {
+        const res = await fetch(API_BASE_URL + "/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", // important for session cookie
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          msgEl.textContent = data.message || "Login failed.";
+          msgEl.style.display = "block";
+          return;
+        }
+
+        // On success, go to home page
+        window.location.href = "/";
+      } catch (err) {
+        console.error("Login error:", err);
+        msgEl.textContent = "Unable to reach server.";
+        msgEl.style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>

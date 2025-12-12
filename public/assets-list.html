@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Asset Tracker – Assets List</title>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    .app-card {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px 24px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    label {
+      font-size: 13px;
+      margin-right: 4px;
+    }
+
+    select {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #d0d4e4;
+      font-size: 13px;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      font-size: 13px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #4a7bff;
+      color: #fff;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #e0e4f0;
+      text-align: left;
+    }
+
+    th {
+      background: #f5f7ff;
+      font-weight: 600;
+      color: #444;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .pill-stock-in {
+      background: #e6f6ed;
+      color: #1c7c3a;
+    }
+
+    .pill-stock-issued {
+      background: #fff4e5;
+      color: #9c6f19;
+    }
+
+    .pill-working {
+      background: #e6f6ed;
+      color: #1c7c3a;
+    }
+
+    .pill-not-working {
+      background: #fdecea;
+      color: #b02a2a;
+    }
+
+    .message {
+      font-size: 13px;
+      margin-top: 10px;
+      color: #b02a2a;
+    }
+  </style>
+</head>
+
+<body data-page="assets-list">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar-root"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <h2 class="page-header-title">Assets List</h2>
+        <p class="page-header-subtitle">
+          View all assets and filter by stock status and location.
+        </p>
+      </header>
+
+      <div class="app-card">
+        <div class="toolbar">
+          <div>
+            <label for="stockFilter">Stock Status:</label>
+            <select id="stockFilter">
+              <option value="">All</option>
+              <option value="In-Stock">In-Stock</option>
+              <option value="Issued">Issued</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="locationFilter">Location:</label>
+            <select id="locationFilter">
+              <option value="">All</option>
+              <option value="Bangalore">Bangalore</option>
+              <option value="Hyderabad">Hyderabad</option>
+              <option value="With Employee">With Employee</option>
+            </select>
+          </div>
+
+          <button id="refreshBtn" class="btn">Refresh</button>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Asset ID</th>
+              <th>Serial No</th>
+              <th>Type</th>
+              <th>Model</th>
+              <th>OS</th>
+              <th>Stock</th>
+              <th>Working</th>
+              <th>Location</th>
+            </tr>
+          </thead>
+          <tbody id="assetsTableBody">
+            <!-- rows inserted via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footer">
+        Asset Tracker · Assets List
+      </div>
+    </main>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="sidebar.js"></script>
+
+  <script>
+    const API_BASE_URL = window.location.origin;
+
+    const stockFilterEl = document.getElementById("stockFilter");
+    const locationFilterEl = document.getElementById("locationFilter");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const messageEl = document.getElementById("message");
+    const tableBody = document.getElementById("assetsTableBody");
+
+    function setMessage(msg) {
+      messageEl.textContent = msg || "";
+    }
+
+    function renderAssets(list) {
+      tableBody.innerHTML = "";
+
+      if (!list || list.length === 0) {
+        setMessage("No assets found for this filter.");
+        return;
+      }
+
+      setMessage("");
+
+      list.forEach((asset, index) => {
+        const tr = document.createElement("tr");
+
+        const idxTd = document.createElement("td");
+        idxTd.textContent = index + 1;
+
+        const idTd = document.createElement("td");
+        idTd.textContent = asset.assetId;
+
+        const serialTd = document.createElement("td");
+        serialTd.textContent = asset.serialNo;
+
+        const typeTd = document.createElement("td");
+        typeTd.textContent = asset.type;
+
+        const modelTd = document.createElement("td");
+        modelTd.textContent = asset.model;
+
+        const osTd = document.createElement("td");
+        osTd.textContent = asset.os;
+
+        const stockTd = document.createElement("td");
+        const stockPill = document.createElement("span");
+        stockPill.className =
+          "pill " +
+          (asset.stockStatus === "In-Stock"
+            ? "pill-stock-in"
+            : "pill-stock-issued");
+        stockPill.textContent = asset.stockStatus;
+        stockTd.appendChild(stockPill);
+
+        const workTd = document.createElement("td");
+        const workPill = document.createElement("span");
+        workPill.className =
+          "pill " +
+          (asset.workingStatus === "Working"
+            ? "pill-working"
+            : "pill-not-working");
+        workPill.textContent = asset.workingStatus;
+        workTd.appendChild(workPill);
+
+        const locTd = document.createElement("td");
+        locTd.textContent = asset.location;
+
+        tr.appendChild(idxTd);
+        tr.appendChild(idTd);
+        tr.appendChild(serialTd);
+        tr.appendChild(typeTd);
+        tr.appendChild(modelTd);
+        tr.appendChild(osTd);
+        tr.appendChild(stockTd);
+        tr.appendChild(workTd);
+        tr.appendChild(locTd);
+
+        tableBody.appendChild(tr);
+      });
+    }
+
+    async function loadAssets() {
+      const stock = stockFilterEl.value.trim();
+      const loc = locationFilterEl.value.trim();
+      setMessage("Loading assets...");
+
+      let url = `${API_BASE_URL}/api/assets/all`;
+      const params = [];
+      if (stock) params.push(`stockStatus=${encodeURIComponent(stock)}`);
+      if (loc) params.push(`location=${encodeURIComponent(loc)}`);
+      if (params.length > 0) {
+        url += "?" + params.join("&");
+      }
+
+      try {
+        const res = await fetch(url, {
+          method: "GET",
+          credentials: "include"
+        });
+
+        if (!res.ok) {
+          setMessage("Failed to load assets.");
+          return;
+        }
+
+        const data = await res.json();
+        renderAssets(data);
+      } catch (err) {
+        console.error(err);
+        setMessage("Unable to connect to the server. Is it running?");
+      }
+    }
+
+    refreshBtn.addEventListener("click", loadAssets);
+    stockFilterEl.addEventListener("change", loadAssets);
+    locationFilterEl.addEventListener("change", loadAssets);
+
+    // Initial load
+    loadAssets();
+  </script>
+</body>
+</html>
