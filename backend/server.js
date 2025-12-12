@@ -5,7 +5,6 @@ const express = require("express");
 const cors = require("cors");
 const session = require("express-session");
 const path = require("path");
-const fs = require("fs");
 
 const employeeRoutes = require("./routes/employees");
 const assetRoutes = require("./routes/assets");
@@ -15,118 +14,80 @@ const authRoutes = require("./routes/auth");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-/**
- * 0) Serve frontend (static files)
- * Your repo structure is:
- *   /public
- *   /backend
- * So from backend, public is: ../public
- */
-const publicDir = path.join(__dirname, "..", "public");
-const indexPath = path.join(publicDir, "index.html");
+// ✅ Render runs behind a proxy (HTTPS terminates at proxy)
+app.set("trust proxy", 1);
 
-console.log("Serving static files from:", publicDir);
+// Serve frontend (repoRoot/public) via backend
+const publicDir = path.join(__dirname, "..", "public");
 app.use(express.static(publicDir));
 
 /**
- * 1) CORS (important for browser-based frontend + cookies)
+ * CORS
+ * Since frontend is served from SAME origin, CORS is not strictly needed,
+ * but keeping it doesn't hurt for local dev or tools like Postman.
  */
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:5173",
   "http://localhost:8080",
+  "https://asset-tracker-o3lk.onrender.com",
 ];
-
-// Add your Render URL automatically (example: https://asset-tracker-o3lk.onrender.com)
-if (process.env.RENDER_EXTERNAL_URL) {
-  ALLOWED_ORIGINS.push(process.env.RENDER_EXTERNAL_URL);
-}
-
-// If you set FRONTEND_URL manually later, allow it too
-if (process.env.FRONTEND_URL) {
-  ALLOWED_ORIGINS.push(process.env.FRONTEND_URL);
-}
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow non-browser calls (curl/postman) which have no origin
-      if (!origin) return callback(null, true);
-
+      if (!origin) return callback(null, true); // Postman/curl
       if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-
       return callback(new Error("Not allowed by CORS: " + origin));
     },
     credentials: true,
   })
 );
 
-/**
- * 2) Basic middleware
- */
 app.use(express.json());
 
 /**
- * 3) Sessions
- * - MemoryStore is OK for now (small internal tool)
+ * Sessions
+ * ✅ For SAME domain frontend+backend: sameSite MUST be "lax"
+ * ✅ On Render HTTPS: secure MUST be true in production
  */
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "dev-secret-change-me",
     resave: false,
     saveUninitialized: false,
+    name: "asset_tracker_sid",
     cookie: {
       httpOnly: true,
-      // If frontend and backend are on SAME domain (Render web service serving public),
-      // "lax" is perfect and simpler.
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production", // true on Render
+      sameSite: "lax", // ✅ important for same-domain app
       maxAge: 1000 * 60 * 60 * 8, // 8 hours
     },
   })
 );
 
-/**
- * 4) Auth guard
- */
+// Auth guard
 function requireAuth(req, res, next) {
   if (req.session && req.session.user) return next();
   return res.status(401).json({ message: "Not authenticated." });
 }
 
-/**
- * 5) Health check (API)
- */
+// Root: serve UI (index.html)
+app.get("/", (req, res) => {
+  res.sendFile(path.join(publicDir, "index.html"));
+});
+
+// Health
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, service: "asset-tracker-backend" });
 });
 
-/**
- * 6) Root route: serve frontend home page
- */
-app.get("/", (req, res) => {
-  if (!fs.existsSync(indexPath)) {
-    return res
-      .status(404)
-      .send("Frontend not found on server. public/index.html is missing.");
-  }
-  return res.sendFile(indexPath);
-});
-
-/**
- * 7) Routes
- * Auth routes do not require login
- */
+// Routes
 app.use("/api/auth", authRoutes);
-
-// Everything else requires login
 app.use("/api/employees", requireAuth, employeeRoutes);
 app.use("/api/assets", requireAuth, assetRoutes);
 app.use("/api/transactions", requireAuth, transactionRoutes);
 
-/**
- * 8) Start server
- */
 app.listen(PORT, () => {
   console.log(`Asset Tracker backend listening on port ${PORT}`);
 });
